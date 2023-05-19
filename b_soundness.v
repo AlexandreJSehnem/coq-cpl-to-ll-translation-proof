@@ -113,6 +113,17 @@ intros. induction Γ.
   - simpl. apply (wk_r_ext []). cbn_sequent. apply IHΓ.
 Qed.
 
+Lemma duplicate_set_element: forall A Γ, ll ((wn (dual (cpl_to_ll A)))::[(wn (dual (cpl_to_ll A)))]) -> ll (dual_set_cpl_to_ll (A::Γ)).
+Proof.
+intros. simpl. apply remove_wn_dual_set'. apply co_r. apply H.
+Qed.
+
+Lemma duplicate_set: forall Γ, ll ((dual_set_cpl_to_ll (Γ))++(dual_set_cpl_to_ll (Γ))) -> ll (dual_set_cpl_to_ll (Γ)).
+intros. induction Γ.
+  - apply H.
+  -  
+
+
 Theorem proof_cpl_to_ll: forall Γ A, Γ \- A -> (ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ))).
 Proof.
 intros. dependent induction H.
@@ -126,34 +137,15 @@ intros. dependent induction H.
       with ([]++(wn (dual (cpl_to_ll A)))::[cpl_to_ll B]++(dual_set_cpl_to_ll Γ)).
     + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
     + cbn_sequent. reflexivity.
+  - 
+
   - induction Γ.
     + apply (cut_r_ext (dual_set_cpl_to_ll []) (parr (wn(dual (cpl_to_ll A))) (cpl_to_ll B)) [cpl_to_ll B]).
       * simpl in IHNc1. simpl. apply IHNc1.
       * cbn_sequent. apply (tens_r_ext []). 
         { cbn_sequent. apply (oc_r_ext [] (cpl_to_ll A) []); cbn_sequent. simpl in IHNc2. apply IHNc2. }
         { ax_expansion. }
-    +
-
-
-    + cbn_sequent.
-      * simpl in IHNc1. apply IHNc1.
-      * 
-    + cbn_sequent. apply (de_r_ext []). cbn_sequent. ax_expansion.
-    + cbn_sequent. apply (tens_r_ext (dual_set_cpl_to_ll Γ)).
-      * simpl. apply (oc_r_ext [] (cpl_to_ll B) []); cbn_sequent.
-induction Γ.
-    + simpl. apply (cut_r_ext [cpl_to_ll B] (wn(dual (cpl_to_ll A)))).
-      * simpl in IHNc1. simpl. apply (ex_perm_r [1; 0] [(wn (dual (cpl_to_ll A))); (cpl_to_ll B)]).
-        replace ([(wn (dual (cpl_to_ll A))); (cpl_to_ll B)])
-          with ([parr (wn (dual (cpl_to_ll A))) (cpl_to_ll B)]).
-        { apply IHNc1. } { apply parr_r.
-
-
- induction Γ.
-    + simpl. replace ([cpl_to_ll B]) with ([cpl_to_ll B]++[]).
-        * apply (cut_r_ext [cpl_to_ll B] (dual (cpl_to_ll A))).
-          { cbn_sequent. apply (ex_perm_r [1; 0] [(dual (cpl_to_ll A)); (cpl_to_ll B)]); cbn_sequent.
-
+    + simpl.
 
 (**The Theorems we are going to prove*)
 Definition Prop_Soundness := forall A,Provable A->Valid A.
