@@ -1,3 +1,5 @@
+From NanoYalla Require Import macrollcut.
+Import LLNotations.
 From CPL Require Export a_base.
 Require Export Bool.
 Export ListNotations.
@@ -7,11 +9,12 @@ Set Implicit Arguments.
 
 definition of Propositional Formulas*)
 Inductive PropF : Set :=
- | Var : PropVars -> PropF
+ | Var : Atom -> PropF
  | Bot : PropF
  | Conj : PropF -> PropF -> PropF
  | Disj : PropF -> PropF -> PropF
  | Impl : PropF -> PropF -> PropF
+ | Neg  : PropF -> PropF
 .
 
 Notation "# P" := (Var P) (at level 1) : My_scope.
@@ -19,7 +22,7 @@ Notation "A ∨ B" := (Disj A B) (at level 15, right associativity) : My_scope.
 Notation "A ∧ B" := (Conj A B) (at level 15, right associativity) : My_scope.
 Notation "A → B" := (Impl A B) (at level 16, right associativity) : My_scope.
 Notation "⊥" := Bot (at level 0)  : My_scope.
-Definition Neg A := A → ⊥.
+(*Definition Neg A := A → ⊥.*)
 Notation "¬ A" := (Neg A) (at level 5) : My_scope.
 Definition Top := ¬⊥.
 Notation "⊤" := Top (at level 0) : My_scope.
@@ -35,6 +38,7 @@ Fixpoint TrueQ v A : bool := match A with
  | B ∨ C => (TrueQ v B) || (TrueQ v C)
  | B ∧ C => (TrueQ v B) && (TrueQ v C)
  | B → C => (negb (TrueQ v B)) || (TrueQ v C)
+ | ¬ B   => negb (TrueQ v B)
 end.
 Definition Satisfies v Γ := forall A, In A Γ -> Is_true (TrueQ v A).
 Definition Models Γ A := forall v,Satisfies v Γ->Is_true (TrueQ v A).
@@ -43,21 +47,57 @@ Definition Valid A := [] ⊨ A.
 
 (** Provability *)
 
-Reserved Notation "Γ ⊢ A" (at level 80).
+Reserved Notation "Γ \- A" (at level 80).
 Inductive Nc : list PropF-> PropF->Prop :=
-| Nax   : forall Γ A  ,    In A Γ                           -> Γ ⊢ A
-| ImpI  : forall Γ A B,  A::Γ ⊢ B                           -> Γ ⊢ A → B
-| ImpE  : forall Γ A B,     Γ ⊢ A → B -> Γ ⊢ A              -> Γ ⊢ B
-| BotC  : forall Γ A  , ¬A::Γ ⊢ ⊥                              -> Γ ⊢ A
-| AndI  : forall Γ A B,     Γ ⊢ A     -> Γ ⊢ B              -> Γ ⊢ A∧B
-| AndE1 : forall Γ A B,     Γ ⊢ A∧B                        -> Γ ⊢ A
-| AndE2 : forall Γ A B,     Γ ⊢ A∧B                        -> Γ ⊢ B
-| OrI1  : forall Γ A B,     Γ ⊢ A                           -> Γ ⊢ A∨B
-| OrI2  : forall Γ A B,     Γ ⊢ B                           -> Γ ⊢ A∨B
-| OrE   : forall Γ A B C,   Γ ⊢ A∨B -> A::Γ ⊢ C -> B::Γ ⊢ C -> Γ ⊢ C
-where "Γ ⊢ A" := (Nc Γ A) : My_scope.
+| Nax   : forall Γ A  ,    In A Γ                           -> Γ \- A
+| ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
+| ImpE  : forall Γ A B,     Γ \- A → B -> Γ \- A              -> Γ \- B
+| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A
+| AndI  : forall Γ A B,     Γ \- A     -> Γ \- B              -> Γ \- A∧B
+| AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
+| AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
+| OrI1  : forall Γ A B,     Γ \- A                           -> Γ \- A∨B
+| OrI2  : forall Γ A B,     Γ \- B                           -> Γ \- A∨B
+| OrE   : forall Γ A B C,   Γ \- A∨B -> A::Γ \- C -> B::Γ \- C -> Γ \- C
+where "Γ \- A" := (Nc Γ A) : My_scope.
 
-Definition Provable A := [] ⊢ A.
+Fixpoint cpl_to_ll (a: PropF) : formula :=
+match a with
+  | Var A => wn (oc (var A))
+  | Disj A B => parr (cpl_to_ll A) (cpl_to_ll B)
+  | Neg A => wn (dual (cpl_to_ll A))
+  | Impl A B => parr (wn (dual (cpl_to_ll A))) (cpl_to_ll B)
+  | Bot => bot
+  | Conj A B => wn( dual ( parr (wn (dual(cpl_to_ll A))) (wn (dual(cpl_to_ll B)))))
+end.
+
+Definition Provable A := [] \- A.
+
+Fixpoint dual_set_cpl_to_ll (a: list PropF) : list formula :=
+match a with
+  | [] => []
+  | A::t => (wn (dual (cpl_to_ll A)))::(dual_set_cpl_to_ll t)
+end.
+
+Require Import Equality.
+
+Lemma remove_wn_dual_set': forall Γ A, ll ((cpl_to_ll A)::[dual (cpl_to_ll A)]) -> ll ((cpl_to_ll A)::(dual_set_cpl_to_ll (A::Γ))).
+Proof.
+intros. induction Γ. 
+  - simpl. apply (de_r_ext [cpl_to_ll A]). cbn_sequent. ax_expansion.
+  - simpl. simpl in IHΓ. apply (wk_r_ext ((cpl_to_ll A)::[(wn(dual (cpl_to_ll A)))])); cbn_sequent. apply IHΓ.
+Qed.
+
+Theorem proof_cpl_to_ll: forall Γ A, Γ \- A -> (ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ))).
+Proof.
+intros. dependent induction H.
+  - induction Γ.
+    + inversion H.
+    + simpl. destruct H.
+      * rewrite H. apply remove_wn_dual_set'. ax_expansion.
+      * apply IHΓ in H. apply (wk_r_ext [cpl_to_ll A]). cbn_sequent. apply H.
+  -
+
 
 (**The Theorems we are going to prove*)
 Definition Prop_Soundness := forall A,Provable A->Valid A.
@@ -99,25 +139,25 @@ induction x;destruct y;try (right;discriminate);
  left;reflexivity.
 Qed.
 
-Lemma Excluded_Middle : forall Γ A, Γ ⊢ A∨¬A.
+Lemma Excluded_Middle : forall Γ A, Γ \- A∨¬A.
 intros;apply BotC;mp;[is_ass|apply OrI2;apply ImpI;mp;[is_ass|apply OrI1;is_ass]].
 Qed.
 
-Lemma weakening2 : forall Γ A, Γ ⊢ A -> forall Δ, (forall B, In B Γ -> In B Δ) -> Δ ⊢ A.
+Lemma weakening2 : forall Γ A, Γ \- A -> forall Δ, (forall B, In B Γ -> In B Δ) -> Δ \- A.
 induction 1;[constructor|constructor 2|econstructor 3|constructor 4|constructor 5|econstructor 6
 |econstructor 7|constructor 8|constructor 9|econstructor 10];try eauto;
 [apply IHNc..|apply IHNc2|try apply IHNc3];intros;in_solve;eauto.
 Qed.
 
-Lemma weakening : forall Γ Δ A, Γ ⊢ A -> Γ++Δ ⊢ A.
+Lemma weakening : forall Γ Δ A, Γ \- A -> Γ++Δ \- A.
 intros;eapply weakening2;[eassumption|in_solve].
 Qed.
 
-Lemma deduction : forall Γ A B, Γ ⊢ A → B -> A::Γ ⊢ B.
+Lemma deduction : forall Γ A B, Γ \- A → B -> A::Γ \- B.
 intros;eapply ImpE with A;[eapply weakening2;[eassumption|in_solve]|is_ass].
 Qed.
 
-Lemma prov_impl : forall A B, Provable (A → B)->forall Γ, Γ ⊢ A -> Γ ⊢ B.
+Lemma prov_impl : forall A B, Provable (A → B)->forall Γ, Γ \- A -> Γ \- B.
 intros. mp. 
   AddnilL;apply weakening. apply H.
   assumption. 
@@ -129,7 +169,7 @@ try (remember (prov_impl IH) as H eqn:HeqH;clear IH HeqH).
 
 (** Soundness *)
 
-Theorem Soundness_general : forall A Γ, Γ ⊢ A -> Γ ⊨ A.
+Theorem Soundness_general : forall A Γ, Γ \- A -> Γ ⊨ A.
 intros A Γ H0 v;induction H0;simpl;intros;auto;
  try simpl in IHNc;try simpl in IHNc1;try simpl in IHNc2;
   case_bool v A;try (case_bool v B;fail);
