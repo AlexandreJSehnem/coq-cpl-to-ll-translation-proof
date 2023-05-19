@@ -81,7 +81,9 @@ end.
 
 Require Import Equality.
 
-Lemma remove_wn_dual_set': forall Γ A, ll ((cpl_to_ll A)::[dual (cpl_to_ll A)]) -> ll ((cpl_to_ll A)::(dual_set_cpl_to_ll (A::Γ))).
+
+(*Lemma to remove dual_set_cpl_to_ll when there is an axiom*)
+Lemma remove_wn_dual_set: forall Γ A, ll ((cpl_to_ll A)::[dual (cpl_to_ll A)]) -> ll ((cpl_to_ll A)::(dual_set_cpl_to_ll (A::Γ))).
 Proof.
 intros. induction Γ. 
   - simpl. apply (de_r_ext [cpl_to_ll A]). cbn_sequent. ax_expansion.
@@ -94,7 +96,7 @@ intros. dependent induction H.
   - induction Γ.
     + inversion H.
     + simpl. destruct H.
-      * rewrite H. apply remove_wn_dual_set'. ax_expansion.
+      * rewrite H. apply remove_wn_dual_set. ax_expansion.
       * apply IHΓ in H. apply (wk_r_ext [cpl_to_ll A]). cbn_sequent. apply H.
   -
 
