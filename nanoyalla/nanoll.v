@@ -31,7 +31,7 @@ Inductive formula : Set :=
 
 (* Adapted from yalla/ll_def.v *)
 (** Rules *)
-Inductive ll : list formula -> Type :=
+Inductive ll : list formula -> Prop :=
 | ax_r : forall X, ll (covar X :: var X :: nil)
 | ex_t_r : forall l1 l2 A B, ll (l1 ++ A :: B :: l2) -> ll (l1 ++ B :: A :: l2)
 | one_r : ll (one :: nil)
