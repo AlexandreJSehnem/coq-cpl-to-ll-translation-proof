@@ -67,7 +67,7 @@ match a with
   | Disj A B => parr (cpl_to_ll A) (cpl_to_ll B)
   | Neg A => wn (dual (cpl_to_ll A))
   | Impl A B => parr (wn (dual (cpl_to_ll A))) (cpl_to_ll B)
-  | Bot => bot
+  | Bot => zero
   | Conj A B => wn( dual ( parr (wn (dual(cpl_to_ll A))) (wn (dual(cpl_to_ll B)))))
 end.
 
@@ -126,9 +126,20 @@ intros. dependent induction H.
       with ([]++(wn (dual (cpl_to_ll A)))::[cpl_to_ll B]++(dual_set_cpl_to_ll Γ)).
     + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
     + cbn_sequent. reflexivity.
-  - apply (cut_r_ext [] (parr (wn(dual (cpl_to_ll B))) (cpl_to_ll B))).
-    + cbn_sequent. apply parr_r. apply (de_r_ext []). cbn_sequent. ax_expansion.
-    + cbn_sequent. simpl. apply (tens_r_ext (dual_set_cpl_to_ll Γ)).
+  - induction Γ.
+    + apply (cut_r_ext (dual_set_cpl_to_ll []) (parr (wn(dual (cpl_to_ll A))) (cpl_to_ll B)) [cpl_to_ll B]).
+      * simpl in IHNc1. simpl. apply IHNc1.
+      * cbn_sequent. apply (tens_r_ext []). 
+        { cbn_sequent. apply (oc_r_ext [] (cpl_to_ll A) []); cbn_sequent. simpl in IHNc2. apply IHNc2. }
+        { ax_expansion. }
+    +
+
+
+    + cbn_sequent.
+      * simpl in IHNc1. apply IHNc1.
+      * 
+    + cbn_sequent. apply (de_r_ext []). cbn_sequent. ax_expansion.
+    + cbn_sequent. apply (tens_r_ext (dual_set_cpl_to_ll Γ)).
       * simpl. apply (oc_r_ext [] (cpl_to_ll B) []); cbn_sequent.
 induction Γ.
     + simpl. apply (cut_r_ext [cpl_to_ll B] (wn(dual (cpl_to_ll A)))).
