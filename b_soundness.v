@@ -90,6 +90,29 @@ intros. induction Γ.
   - simpl. simpl in IHΓ. apply (wk_r_ext ((cpl_to_ll A)::[(wn(dual (cpl_to_ll A)))])); cbn_sequent. apply IHΓ.
 Qed.
 
+(*Lemma to remove dual_set_cpl_to_ll with only one element*)
+Lemma remove_wn_dual_set': forall Γ A, ll ([wn(dual (cpl_to_ll A))]) -> ll (dual_set_cpl_to_ll (A::Γ)).
+Proof.
+intros. induction Γ. 
+  - simpl. apply H.
+  - simpl. simpl in IHΓ. apply (wk_r_ext ([(wn(dual (cpl_to_ll A)))])); cbn_sequent. apply IHΓ.
+Qed.
+
+(*Lemma to remove dual_set_cpl_to_ll when it is together with two distinct elements*)
+Lemma remove_wn_dual_set'': forall A B p Γ, ll (A::[B]) -> ll (A::B::(dual_set_cpl_to_ll (p::Γ))).
+Proof.
+intros. induction Γ.
+  - simpl. apply (wk_r_ext (A::[B])). cbn_sequent. apply H.
+  - simpl. apply (wk_r_ext (A::(B)::[wn(dual(cpl_to_ll p))])). cbn_sequent. simpl in IHΓ. apply IHΓ. 
+Qed.
+
+Lemma remove_remove: forall Γ, ll [] -> ll (dual_set_cpl_to_ll Γ).
+Proof.
+intros. induction Γ.
+  - simpl. apply H.
+  - simpl. apply (wk_r_ext []). cbn_sequent. apply IHΓ.
+Qed.
+
 Theorem proof_cpl_to_ll: forall Γ A, Γ \- A -> (ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ))).
 Proof.
 intros. dependent induction H.
@@ -98,7 +121,27 @@ intros. dependent induction H.
     + simpl. destruct H.
       * rewrite H. apply remove_wn_dual_set. ax_expansion.
       * apply IHΓ in H. apply (wk_r_ext [cpl_to_ll A]). cbn_sequent. apply H.
-  -
+  - simpl. apply parr_r. simpl in IHNc. 
+    replace ((wn (dual (cpl_to_ll A)))::(cpl_to_ll B)::(dual_set_cpl_to_ll Γ)) 
+      with ([]++(wn (dual (cpl_to_ll A)))::[cpl_to_ll B]++(dual_set_cpl_to_ll Γ)).
+    + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
+    + cbn_sequent. reflexivity.
+  - apply (cut_r_ext [] (parr (wn(dual (cpl_to_ll B))) (cpl_to_ll B))).
+    + cbn_sequent. apply parr_r. apply (de_r_ext []). cbn_sequent. ax_expansion.
+    + cbn_sequent. simpl. apply (tens_r_ext (dual_set_cpl_to_ll Γ)).
+      * simpl. apply (oc_r_ext [] (cpl_to_ll B) []); cbn_sequent.
+induction Γ.
+    + simpl. apply (cut_r_ext [cpl_to_ll B] (wn(dual (cpl_to_ll A)))).
+      * simpl in IHNc1. simpl. apply (ex_perm_r [1; 0] [(wn (dual (cpl_to_ll A))); (cpl_to_ll B)]).
+        replace ([(wn (dual (cpl_to_ll A))); (cpl_to_ll B)])
+          with ([parr (wn (dual (cpl_to_ll A))) (cpl_to_ll B)]).
+        { apply IHNc1. } { apply parr_r.
+
+
+ induction Γ.
+    + simpl. replace ([cpl_to_ll B]) with ([cpl_to_ll B]++[]).
+        * apply (cut_r_ext [cpl_to_ll B] (dual (cpl_to_ll A))).
+          { cbn_sequent. apply (ex_perm_r [1; 0] [(dual (cpl_to_ll A)); (cpl_to_ll B)]); cbn_sequent.
 
 
 (**The Theorems we are going to prove*)
