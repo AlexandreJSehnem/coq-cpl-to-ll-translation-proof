@@ -54,14 +54,16 @@ Inductive Nc : list PropF-> PropF->Prop :=
 (*REPLACE ImpE Here*)
 (*REPLACE BotC Here*)
 (*REPLACE AndI Here*)
-| AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
-| AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
+(*REPLACE AndE1 Here*)
+(*REPLACE AndE2 Here*)
 | OrI1  : forall Γ A B,     Γ \- A                           -> Γ \- A∨B
 | OrI2  : forall Γ A B,     Γ \- B                           -> Γ \- A∨B
 | OrE   : forall Γ A B C,   Γ \- A∨B -> A::Γ \- C -> B::Γ \- C -> Γ \- C
 | ImpE  : forall Γ A B,     Γ \- A → B -> Γ \- A              -> Γ \- B
 | BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A
 | AndI  : forall Γ A B,     Γ \- A     -> Γ \- B              -> Γ \- A∧B
+| AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
+| AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
 where "Γ \- A" := (Nc Γ A) : My_scope.
 
 Fixpoint cpl_to_ll (a: PropF) : formula :=
@@ -73,6 +75,8 @@ match a with
   | Bot => zero
   | Conj A B => wn( dual ( parr (wn (dual(cpl_to_ll A))) (wn (dual(cpl_to_ll B)))))
 end.
+
+Definition parr_oplus_eq a b:= (parr a b) = (wn(aplus (oc a) (oc b))).
 
 Definition Provable A := [] \- A.
 
@@ -134,13 +138,6 @@ intros. dependent induction H.
       with ([]++(wn (dual (cpl_to_ll A)))::[cpl_to_ll B]++(dual_set_cpl_to_ll Γ)).
     + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
     + cbn_sequent. reflexivity.
-(* Prova da eliminação do ^ 1*)
-  - simpl in IHNc. apply (cut_r_ext [cpl_to_ll A] (?(!(cpl_to_ll A^)^ ⊗ !(cpl_to_ll B^)^))).
-    + simpl. apply (de_r_ext [cpl_to_ll A]). apply (parr_r_ext [cpl_to_ll A]). 
-      simpl. apply (de_r_ext [cpl_to_ll A]). cbn_sequent. apply (wk_r_ext ((cpl_to_ll A)::[dual(cpl_to_ll A)])).  
-      cbn_sequent. ax_expansion.
-    + 
-      
 
 (*Começo da prova de eliminação da implicação*)
   - induction Γ.
@@ -152,9 +149,16 @@ intros. dependent induction H.
     + simpl.
 
 (*Começo da prova de eliminação da negação*)
-  - apply (cut_r_ext [cpl_to_ll A] (dual(zero))).
-    + cbn_sequent. apply (top_r_ext [cpl_to_ll A]).
-    +
+  - apply (cut_r_ext [] (dual(zero))).
+    + cbn_sequent. apply (top_r_ext []).
+    + simpl. simpl in IHNc. rewrite <-(bidual (cpl_to_ll A)).
+
+(* Prova da eliminação do ^ 1*)
+  - simpl in IHNc. apply (cut_r_ext [cpl_to_ll A] (?(!(cpl_to_ll A^)^ ⊗ !(cpl_to_ll B^)^))).
+    + simpl. apply (de_r_ext [cpl_to_ll A]). apply (parr_r_ext [cpl_to_ll A]). 
+      simpl. apply (de_r_ext [cpl_to_ll A]). cbn_sequent. apply (wk_r_ext ((cpl_to_ll A)::[dual(cpl_to_ll A)])).  
+      cbn_sequent. ax_expansion.
+    + 
 
 Lemma duplicate_set: forall Γ, ll ((dual_set_cpl_to_ll (Γ))++(dual_set_cpl_to_ll (Γ))) -> ll (dual_set_cpl_to_ll (Γ)).
 intros. induction Γ.
