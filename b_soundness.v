@@ -51,14 +51,17 @@ Reserved Notation "Γ \- A" (at level 80).
 Inductive Nc : list PropF-> PropF->Prop :=
 | Nax   : forall Γ A  ,    In A Γ                           -> Γ \- A
 | ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
-| ImpE  : forall Γ A B,     Γ \- A → B -> Γ \- A              -> Γ \- B
-| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A
-| AndI  : forall Γ A B,     Γ \- A     -> Γ \- B              -> Γ \- A∧B
+(*REPLACE ImpE Here*)
+(*REPLACE BotC Here*)
+(*REPLACE AndI Here*)
 | AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
 | AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
 | OrI1  : forall Γ A B,     Γ \- A                           -> Γ \- A∨B
 | OrI2  : forall Γ A B,     Γ \- B                           -> Γ \- A∨B
 | OrE   : forall Γ A B C,   Γ \- A∨B -> A::Γ \- C -> B::Γ \- C -> Γ \- C
+| ImpE  : forall Γ A B,     Γ \- A → B -> Γ \- A              -> Γ \- B
+| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A
+| AndI  : forall Γ A B,     Γ \- A     -> Γ \- B              -> Γ \- A∧B
 where "Γ \- A" := (Nc Γ A) : My_scope.
 
 Fixpoint cpl_to_ll (a: PropF) : formula :=
@@ -113,16 +116,10 @@ intros. induction Γ.
   - simpl. apply (wk_r_ext []). cbn_sequent. apply IHΓ.
 Qed.
 
-Lemma duplicate_set_element: forall A Γ, ll ((wn (dual (cpl_to_ll A)))::[(wn (dual (cpl_to_ll A)))]) -> ll (dual_set_cpl_to_ll (A::Γ)).
+Lemma duplicate_set_element: forall A Γ, ll ((wn (dual (cpl_to_ll A)))::((wn (dual (cpl_to_ll A))))::(dual_set_cpl_to_ll (A::Γ))) -> ll (dual_set_cpl_to_ll (A::Γ)).
 Proof.
-intros. simpl. apply remove_wn_dual_set'. apply co_r. apply H.
+intros. simpl. apply co_r. apply co_r. apply H.
 Qed.
-
-Lemma duplicate_set: forall Γ, ll ((dual_set_cpl_to_ll (Γ))++(dual_set_cpl_to_ll (Γ))) -> ll (dual_set_cpl_to_ll (Γ)).
-intros. induction Γ.
-  - apply H.
-  -  
-
 
 Theorem proof_cpl_to_ll: forall Γ A, Γ \- A -> (ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ))).
 Proof.
@@ -137,8 +134,15 @@ intros. dependent induction H.
       with ([]++(wn (dual (cpl_to_ll A)))::[cpl_to_ll B]++(dual_set_cpl_to_ll Γ)).
     + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
     + cbn_sequent. reflexivity.
-  - 
+(* Prova da eliminação do ^ 1*)
+  - simpl in IHNc. apply (cut_r_ext [cpl_to_ll A] (?(!(cpl_to_ll A^)^ ⊗ !(cpl_to_ll B^)^))).
+    + simpl. apply (de_r_ext [cpl_to_ll A]). apply (parr_r_ext [cpl_to_ll A]). 
+      simpl. apply (de_r_ext [cpl_to_ll A]). cbn_sequent. apply (wk_r_ext ((cpl_to_ll A)::[dual(cpl_to_ll A)])).  
+      cbn_sequent. ax_expansion.
+    + 
+      
 
+(*Começo da prova de eliminação da implicação*)
   - induction Γ.
     + apply (cut_r_ext (dual_set_cpl_to_ll []) (parr (wn(dual (cpl_to_ll A))) (cpl_to_ll B)) [cpl_to_ll B]).
       * simpl in IHNc1. simpl. apply IHNc1.
@@ -146,6 +150,16 @@ intros. dependent induction H.
         { cbn_sequent. apply (oc_r_ext [] (cpl_to_ll A) []); cbn_sequent. simpl in IHNc2. apply IHNc2. }
         { ax_expansion. }
     + simpl.
+
+(*Começo da prova de eliminação da negação*)
+  - apply (cut_r_ext [cpl_to_ll A] (dual(zero))).
+    + cbn_sequent. apply (top_r_ext [cpl_to_ll A]).
+    +
+
+Lemma duplicate_set: forall Γ, ll ((dual_set_cpl_to_ll (Γ))++(dual_set_cpl_to_ll (Γ))) -> ll (dual_set_cpl_to_ll (Γ)).
+intros. induction Γ.
+  - apply H.
+  -  
 
 (**The Theorems we are going to prove*)
 Definition Prop_Soundness := forall A,Provable A->Valid A.
