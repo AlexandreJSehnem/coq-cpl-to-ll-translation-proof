@@ -19,13 +19,20 @@ Atualmente é necessario:
 
 - cpl_to_ll: Esse fixpoint possui as regras de tradução LPC -> LL, para cada um dos conectivos da lógica clássica.
 	A	=> ?!(At) -> quando A for axioma
+	
 	A ∨ B	=> (At) ⅋ (Bt)
+	
 	A -> B 	=> (?(At)^) ⅋ (Bt)
+	
 	~A	=> ?(At)^
+	
 	bot	=> zero
+	
 	A ∧ B	=> ?(((?((At)^)) ⅋ (?((Bt)^)))^)
 
 - dual_set_cpl_to_ll: A biblioteca nanoyalla só possui implementação para as regras dos sequentes da direita, então este fixpoint é utilizado para fazer uma tradução LPC -> LL e ao mesmo também fazer o dual de todas as regras para que elas possam ser usadas do lado direito do sequente.
+
 	LPC		LL
+	
 	(A |- B)	|- (dual_set_cpl_to_ll A), (cpl_to_ll B)
 
