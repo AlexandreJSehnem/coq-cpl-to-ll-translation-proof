@@ -18,6 +18,7 @@ Atualmente é necessario:
 - A dedução natural da lógica proposicional clássica é um tipo indutivo chamado Nc:
 
 - cpl_to_ll: Esse fixpoint possui as regras de tradução LPC -> LL, para cada um dos conectivos da lógica clássica.
+
 	A	=> ?!(At) -> quando A for axioma
 	
 	A ∨ B	=> (At) ⅋ (Bt)
