@@ -111,8 +111,11 @@ intros. induction Δ.
   - simpl. apply (wk_r_ext A ). apply IHΔ.
 Qed.
 
-(*Lemma remove_oc_set: forall A Δ, ll ((cpl_to_ll A) :: (dual_set_cpl_to_ll Δ)) -> ll ((!(cpl_to_ll A)) :: (dual_set_cpl_to_ll Δ)).
+Lemma remove_oc_set: forall A Δ, ll ((cpl_to_ll A) :: (dual_set_cpl_to_ll Δ)) -> ll ((!(cpl_to_ll A)) :: (dual_set_cpl_to_ll Δ)).
 Proof.
+intros.
+Admitted.
+(*
 intros. destruct Δ.
   - simpl. apply (oc_r_ext [] (cpl_to_ll A) []). cbn_sequent. apply H.
   - apply (oc_r_ext [] (cpl_to_ll A) (dual_set_cpl_to_ll (p :: Δ))) in H. *)
