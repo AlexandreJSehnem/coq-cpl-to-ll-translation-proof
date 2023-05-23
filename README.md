@@ -10,6 +10,7 @@ Atualmente é necessario:
 - Compilar a_base.v, usando os seguintes comandos:
 
     $ coq_makefile -f _CoqProject -o CoqMakefile
+    
     $ make all -f CoqMakefile
 	
 	
