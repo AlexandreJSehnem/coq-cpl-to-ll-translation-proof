@@ -8,8 +8,9 @@ Atualmente é necessario:
 - Instalar Nanoyalla: para isso é só seguir os passos descritos no "Yalla-free Installation" dentro do readme da pasta nanoyalla.
 
 - Compilar a_base.v, usando os seguintes comandos:
-	coq_makefile -f _CoqProject -o CoqMakefile
-	make all -f CoqMakefile
+
+    $ coq_makefile -f _CoqProject -o CoqMakefile
+    $ make all -f CoqMakefile
 	
 	
 ------ Notas sobre a tradução ------
