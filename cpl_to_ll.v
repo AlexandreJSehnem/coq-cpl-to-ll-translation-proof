@@ -123,15 +123,24 @@ intros. induction Δ.
   - simpl. apply (wk_r_ext ((?(cbv A)^)::(cbv C)::dual_set_cbv Γ)). apply IHΔ.
 Qed.
 
+Fixpoint oc_set_cbv (a: list PropF) : list formula :=
+match a with
+  | [] => []
+  | A::t => (dual (cbv A))::(oc_set_cbv t)
+end.
+
+Lemma map_equals_set: forall Δ, dual_set_cbv Δ = nanoll.map wn (oc_set_cbv Δ).
+Proof.
+intros. induction Δ.
+  - reflexivity.
+  - simpl. rewrite IHΔ. reflexivity.
+Qed.
 
 Lemma remove_oc_set: forall A Δ, ll ((cbv A) :: (dual_set_cbv Δ)) -> ll ((!(cbv A)) :: (dual_set_cbv Δ)).
 Proof.
-intros. destruct Δ.
-  - simpl. simpl in H. apply (oc_r_ext [] (cbv A) []). apply H.
-  - simpl. simpl in H. destruct dual_set_cbv.
-      + apply (oc_r_ext [] (cbv A) [((cbv p)^)]). apply H.
-      + admit.
-Admitted.
+intros. rewrite map_equals_set. apply (oc_r_ext [] (cbv A) (oc_set_cbv Δ)). simpl.
+ rewrite <- map_equals_set. apply H.
+Qed.
 
 Theorem proof_cbv: forall Γ A, Γ \- A -> (ll ((cbv A)::(dual_set_cbv Γ))).
 Proof.
@@ -171,7 +180,7 @@ intros. dependent induction H.
               { simpl. cbn_sequent. 
                 replace ((dual_set_cbv Δ) ++ [!cbv A])
                    with ([]++(dual_set_cbv Δ)++(!cbv A)::[]).
-                { apply ex_transp_middle1. cbn_sequent. rewrite app_nil_r. admit. }
+                { apply ex_transp_middle1. cbn_sequent. rewrite app_nil_r. apply remove_oc_set. apply IHNi2. }
                 { reflexivity. } }
               { ax_expansion. } }
             { reflexivity. } }
@@ -199,10 +208,10 @@ intros. dependent induction H.
     + rewrite bidual. apply IHNi.
 
 (* Prova 1 da introdução do OU*)
-  - simpl. apply (plus_r1_ext []). cbn_sequent. admit.
+  - simpl. apply (plus_r1_ext []). cbn_sequent. apply remove_oc_set. apply IHNi.
 
 (* Prova 2 da introdução do OU*)
-  - simpl. apply (plus_r2_ext []). cbn_sequent. admit.
+  - simpl. apply (plus_r2_ext []). cbn_sequent. apply remove_oc_set. apply IHNi.
 
 (* Prova da eliminação do OU*)
   - rewrite split_tr_set.
@@ -224,72 +233,8 @@ intros. dependent induction H.
           with ([]++[(?(cbv B)^)] ++ cbv C :: dual_set_cbv Δ').
           { apply ex_transp_middle1. simpl. apply IHNi3. } reflexivity. }
     + reflexivity.
-Admitted.
-
-Theorem proof_cbv': forall Γ A, (ll ((cbv A)::(dual_set_cbv Γ))) -> Γ \- A.
-Proof.
-intros.
-Admitted.
-
-
-(* Começo tradução call-by-name *)
-Fixpoint cbn (a: PropF) : formula :=
-match a with
-  | Var A => oc (var A)
-  | Disj A B => aplus (cbv A) (cbv B)
-  | Impl A B => oc (parr (dual (cbv A)) (cbv B))
-  | Neg A => parr (wn (dual (cbv A))) zero
-  | Bot => zero
-  | Conj A B => tens (cbv A) (cbv B)
-end.
-
-
-Fixpoint dual_set_cbn (a: list PropF) : list formula :=
-match a with
-  | [] => []
-  | A::t => (wn (dual (cbn A)))::(dual_set_cbn t)
-end.
-
-Lemma remove_cbn_set: forall Δ A, ll (A) -> ll (A++(dual_set_cbn Δ)).
-Proof.
-intros. induction Δ.
-  - simpl. rewrite app_nil_r. apply H.
-  - simpl. apply (wk_r_ext A ). apply IHΔ.
 Qed.
 
-(*Lemma to remove dual_set_cbv when there is an axiom*)
-Lemma remove_wn_set_cbn: forall Γ A, ll ((cbn A)::[dual (cbn A)]) -> ll ((cbn A)::(dual_set_cbn (A::Γ))).
-Proof.
-intros. induction Γ. 
-  - simpl. apply (de_r_ext [cbn A]). cbn_sequent. ax_expansion.
-  - simpl. simpl in IHΓ. apply (wk_r_ext ((cbn A)::[(wn(dual (cbn A)))])); cbn_sequent. apply IHΓ.
-Qed.
 
-Lemma split_cbn_set: forall Δ Γ, dual_set_cbn (Δ ++ Γ) = (dual_set_cbn (Δ)++dual_set_cbn (Γ)).
-Proof.
-intros. induction Δ.
-- simpl. reflexivity.
-- simpl. rewrite IHΔ. reflexivity.
-Qed.
-
-Theorem proof_cbn: forall Γ A, Γ \- A -> (ll ((cbn A)::(dual_set_cbn Γ))).
-Proof.
-intros. induction H.
-(* Axiom *)
-  - induction Γ.
-    + inversion H.
-    + simpl. simpl in H. destruct H.
-      * rewrite H. apply remove_wn_set_cbn. ax_expansion.
-      * apply (wk_r_ext [(cbn A)]). apply IHΓ. apply H.
-(* Introdução da implicação *)
-  - simpl. admit.
-(* Eliminação da implicação *)
-  - simpl in IHNi1. rewrite split_cbn_set.
-    replace ((cbn B) :: dual_set_cbn Γ ++ dual_set_cbn Δ)
-    with (cbn B :: dual_set_cbn Γ ++ dual_set_cbn Δ)
-    apply (cut_r_ext ((cbn B) :: dual_set_cbn Γ) (!(cbv A^ ⅋ cbv B)) (dual_set_cbn Δ)).
-    + admit.
-    + simpl. admit.
-Admitted.
 
 
