@@ -32,7 +32,7 @@ Notation "A ↔ B" := (BiImpl A B) (at level 17, right associativity) : My_scope
 (** Provability *)
 
 Reserved Notation "Γ \- A" (at level 80).
-Inductive Nc : list PropF-> PropF->Prop :=
+Inductive Ni : list PropF-> PropF->Prop :=
 | Nax   : forall Γ A  ,    In A Γ                           -> Γ \- A
 | ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
 | ImpE  : forall Γ Δ A B,     Γ \- A → B -> Δ \- A              -> Γ++Δ \- B
@@ -44,7 +44,7 @@ Inductive Nc : list PropF-> PropF->Prop :=
 | OrI1  : forall Γ A B,     Γ \- A                           -> Γ \- A∨B
 | OrI2  : forall Γ A B,     Γ \- B                           -> Γ \- A∨B
 | OrE   : forall Γ Δ Δ' A B C,   Γ \- A∨B -> A::Δ \- C -> B::(Δ') \- C -> Γ++Δ++(Δ') \- C
-where "Γ \- A" := (Nc Γ A) : My_scope.
+where "Γ \- A" := (Ni Γ A) : My_scope.
 
 Definition Provable A := [] \- A.
 
@@ -145,10 +145,10 @@ intros. dependent induction H.
       * apply IHΓ in H. apply (wk_r_ext [cbv A]). cbn_sequent. apply H.
 
 (*Introdução da Implicação*)
-  - simpl. apply parr_r. simpl in IHNc. 
+  - simpl. apply parr_r. simpl in IHNi. 
     replace ((wn (dual (cbv A)))::(cbv B)::(dual_set_cbv Γ)) 
       with ([]++(wn (dual (cbv A)))::[cbv B]++(dual_set_cbv Γ)).
-    + apply ex_transp_middle2 . cbn_sequent. apply IHNc.
+    + apply ex_transp_middle2 . cbn_sequent. apply IHNi.
     + cbn_sequent. reflexivity.
 
 (*Eliminação da implicação*)
@@ -157,10 +157,10 @@ intros. dependent induction H.
       with ([]++(cbv B) :: (dual_set_cbv Γ) ++ (dual_set_cbv Δ)).
     + apply ex_transp_middle2. cbn_sequent.
     apply (cut_r_ext (dual_set_cbv Γ) (parr (wn(dual (cbv A))) (cbv B)) ((cbv B)::(dual_set_cbv Δ))).
-      * simpl in IHNc1. 
+      * simpl in IHNi1. 
         replace ((?(cbv A)^ ⅋ (cbv B)) :: (dual_set_cbv Γ))
-          with ([]++(?(cbv A)^ ⅋ (cbv B)) :: (dual_set_cbv Γ)++[]) in IHNc1.
-        { apply ex_transp_middle1 in IHNc1. apply IHNc1. }
+          with ([]++(?(cbv A)^ ⅋ (cbv B)) :: (dual_set_cbv Γ)++[]) in IHNi1.
+        { apply ex_transp_middle1 in IHNi1. apply IHNi1. }
         { simpl. rewrite app_nil_r. reflexivity. }
       * replace ((?(cbv A)^ ⅋ (cbv B))^ :: (cbv B) :: (dual_set_cbv Δ))
           with ([(?(cbv A)^ ⅋ (cbv B))^] ++ (cbv B) :: (dual_set_cbv Δ)++[]).
@@ -179,24 +179,24 @@ intros. dependent induction H.
      + reflexivity.
 
 (* Prova da eliminação da Negação*)
-  - simpl. simpl in IHNc. apply (cut_r_ext [(cbv A)] (dual 0 )).
+  - simpl. simpl in IHNi. apply (cut_r_ext [(cbv A)] (dual 0 )).
     + simpl. apply (top_r_ext [(cbv A)]).
-    + simpl. apply  IHNc.
+    + simpl. apply  IHNi.
 
 (* Prova da introdução do E*)
   - simpl. rewrite split_tr_set. apply (with_r_ext []).
-    + simpl. apply remove_and_intros'. apply IHNc1.
-    + simpl. apply remove_and_intros''. apply IHNc2.
+    + simpl. apply remove_and_intros'. apply IHNi1.
+    + simpl. apply remove_and_intros''. apply IHNi2.
 
 (* Prova 1 da eliminação do E*)
-  - simpl in IHNc. apply (cut_r_ext [cbv A] (dual (awith (cbv A) (cbv B))) (dual_set_cbv Γ)).
+  - simpl in IHNi. apply (cut_r_ext [cbv A] (dual (awith (cbv A) (cbv B))) (dual_set_cbv Γ)).
     + simpl. apply (plus_r1_ext [cbv A]). cbn_sequent. ax_expansion.
-    + rewrite bidual. apply IHNc.
+    + rewrite bidual. apply IHNi.
 
 (* Prova 2 da eliminação do E*)
-  - simpl in IHNc. apply (cut_r_ext [cbv B] (dual (awith (cbv A) (cbv B))) (dual_set_cbv Γ)).
+  - simpl in IHNi. apply (cut_r_ext [cbv B] (dual (awith (cbv A) (cbv B))) (dual_set_cbv Γ)).
     + simpl. apply (plus_r2_ext [cbv B]). cbn_sequent. ax_expansion.
-    + rewrite bidual. apply IHNc.
+    + rewrite bidual. apply IHNi.
 
 (* Prova 1 da introdução do OU*)
   - simpl. apply (plus_r1_ext []). cbn_sequent. admit.
@@ -208,21 +208,21 @@ intros. dependent induction H.
   - rewrite split_tr_set.
     replace (cbv C :: dual_set_cbv Γ ++ dual_set_cbv (Δ ++ Δ'))
     with ([]++cbv C :: dual_set_cbv Γ ++ dual_set_cbv (Δ ++ Δ')).
-    + apply ex_transp_middle2. simpl. simpl in IHNc1. 
+    + apply ex_transp_middle2. simpl. simpl in IHNi1. 
       apply (cut_r_ext (dual_set_cbv Γ) (aplus (oc (cbv A)) (oc (cbv B))) ((cbv C) :: dual_set_cbv (Δ ++ Δ'))).
       * replace (dual_set_cbv Γ ++ [!cbv A ⊕ !cbv B])
         with ([]++dual_set_cbv Γ ++ (!cbv A ⊕ !cbv B)::[]).
-        { apply ex_transp_middle1. simpl. rewrite app_nil_r. apply IHNc1. }
+        { apply ex_transp_middle1. simpl. rewrite app_nil_r. apply IHNi1. }
         { reflexivity. }
       * simpl. apply (with_r_ext []).
-        { simpl. rewrite split_tr_set. apply remove_or_elim''. simpl in IHNc2.
+        { simpl. rewrite split_tr_set. apply remove_or_elim''. simpl in IHNi2.
           replace ((?(cbv A)^ :: cbv C :: dual_set_cbv Δ))
           with ([]++[(?(cbv A)^)] ++ cbv C :: dual_set_cbv Δ).
-          { apply ex_transp_middle1. simpl. apply IHNc2. } reflexivity. }
-        { simpl. rewrite split_tr_set. apply remove_or_elim'. simpl in IHNc3.
+          { apply ex_transp_middle1. simpl. apply IHNi2. } reflexivity. }
+        { simpl. rewrite split_tr_set. apply remove_or_elim'. simpl in IHNi3.
           replace ((?(cbv B)^ :: cbv C :: dual_set_cbv Δ'))
           with ([]++[(?(cbv B)^)] ++ cbv C :: dual_set_cbv Δ').
-          { apply ex_transp_middle1. simpl. apply IHNc3. } reflexivity. }
+          { apply ex_transp_middle1. simpl. apply IHNi3. } reflexivity. }
     + reflexivity.
 Admitted.
 
