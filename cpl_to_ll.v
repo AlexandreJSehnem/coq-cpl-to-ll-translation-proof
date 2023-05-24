@@ -37,6 +37,7 @@ Inductive Nc : list PropF-> PropF->Prop :=
 | ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
 | ImpE  : forall Γ Δ A B,     Γ \- A → B -> Δ \- A              -> Γ++Δ \- B
 (*| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A*)
+| NegE  : forall Γ A,     Γ \- A     -> Γ \- ¬ A              -> Γ \- ⊥
 | AndI  : forall Γ Δ A B,     Γ \- A     -> Δ \- B              -> Δ++Γ \- A∧B
 | AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
 | AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
@@ -126,10 +127,6 @@ Lemma remove_oc_set: forall A Δ, ll ((cpl_to_ll A) :: (dual_set_cpl_to_ll Δ)) 
 Proof.
 intros.
 Admitted.
-(*
-intros. destruct Δ.
-  - simpl. apply (oc_r_ext [] (cpl_to_ll A) []). cbn_sequent. apply H.
-  - apply (oc_r_ext [] (cpl_to_ll A) (dual_set_cpl_to_ll (p :: Δ))) in H. *)
 
 Theorem proof_cpl_to_ll: forall Γ A, Γ \- A -> (ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ))).
 Proof.
@@ -175,6 +172,11 @@ intros. dependent induction H.
             { reflexivity. } }
         { rewrite app_nil_r. reflexivity. }
      + reflexivity.
+
+(* Prova da eliminação da Negação*)
+  - simpl. simpl in IHNc2. apply (cut_r_ext [(cpl_to_ll ⊥)] (dual 0)).
+    + simpl. apply (top_r_ext [0]).
+    + simpl. admit.
 
 (* Prova da introdução do E*)
   - simpl. rewrite split_tr_set. apply (with_r_ext []).
