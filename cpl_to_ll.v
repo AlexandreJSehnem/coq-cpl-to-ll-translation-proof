@@ -37,7 +37,7 @@ Inductive Nc : list PropF-> PropF->Prop :=
 | ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
 | ImpE  : forall Γ Δ A B,     Γ \- A → B -> Δ \- A              -> Γ++Δ \- B
 (*| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A*)
-| NegE  : forall Γ A,     Γ \- A     -> Γ \- ¬ A              -> Γ \- ⊥
+| BotE  : forall Γ A,     Γ \- ⊥                            -> Γ \- A
 | AndI  : forall Γ Δ A B,     Γ \- A     -> Δ \- B              -> Δ++Γ \- A∧B
 | AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
 | AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
@@ -174,9 +174,9 @@ intros. dependent induction H.
      + reflexivity.
 
 (* Prova da eliminação da Negação*)
-  - simpl. simpl in IHNc2. apply (cut_r_ext [(cpl_to_ll ⊥)] (dual 0)).
-    + simpl. apply (top_r_ext [0]).
-    + simpl. admit.
+  - simpl. simpl in IHNc. apply (cut_r_ext [(cpl_to_ll A)] (dual 0 )).
+    + simpl. apply (top_r_ext [(cpl_to_ll A)]).
+    + simpl. apply  IHNc.
 
 (* Prova da introdução do E*)
   - simpl. rewrite split_tr_set. apply (with_r_ext []).
