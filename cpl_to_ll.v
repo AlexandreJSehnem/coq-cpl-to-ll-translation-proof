@@ -29,22 +29,6 @@ Notation "⊤" := Top (at level 0) : My_scope.
 Definition BiImpl A B := (A→B)∧(B→A).
 Notation "A ↔ B" := (BiImpl A B) (at level 17, right associativity) : My_scope.
 
-(** Validness *)
-
-(** Valuations are maps PropVars -> bool sending ⊥ to false*)
-Fixpoint TrueQ v A : bool := match A with
- | # P   => v P
- | ⊥     => false
- | B ∨ C => (TrueQ v B) || (TrueQ v C)
- | B ∧ C => (TrueQ v B) && (TrueQ v C)
- | B → C => (negb (TrueQ v B)) || (TrueQ v C)
- | ¬ B   => negb (TrueQ v B)
-end.
-Definition Satisfies v Γ := forall A, In A Γ -> Is_true (TrueQ v A).
-Definition Models Γ A := forall v,Satisfies v Γ->Is_true (TrueQ v A).
-Notation "Γ ⊨ A" := (Models Γ A) (at level 80).
-Definition Valid A := [] ⊨ A.
-
 (** Provability *)
 
 Reserved Notation "Γ \- A" (at level 80).
@@ -52,7 +36,7 @@ Inductive Nc : list PropF-> PropF->Prop :=
 | Nax   : forall Γ A  ,    In A Γ                           -> Γ \- A
 | ImpI  : forall Γ A B,  A::Γ \- B                           -> Γ \- A → B
 | ImpE  : forall Γ Δ A B,     Γ \- A → B -> Δ \- A              -> Γ++Δ \- B
-| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A
+(*| BotC  : forall Γ A  , ¬A::Γ \- ⊥                              -> Γ \- A*)
 | AndI  : forall Γ Δ A B,     Γ \- A     -> Δ \- B              -> Δ++Γ \- A∧B
 | AndE1 : forall Γ A B,     Γ \- A∧B                        -> Γ \- A
 | AndE2 : forall Γ A B,     Γ \- A∧B                        -> Γ \- B
@@ -64,21 +48,18 @@ where "Γ \- A" := (Nc Γ A) : My_scope.
 Definition Provable A := [] \- A.
 
 (**The Theorems we are going to prove*)
-Definition Prop_Soundness := forall A,Provable A->Valid A.
-Definition Prop_Completeness := forall A,Valid A->Provable A.
+(*Definition Prop_Soundness := forall A,Provable A->Valid A.*)
 
 Fixpoint cpl_to_ll (a: PropF) : formula :=
 match a with
-  | Var A => wn (oc (var A))
-  | Disj A B => parr (cpl_to_ll A) (cpl_to_ll B)
+  | Var A => var A
+  | Disj A B => aplus (oc (cpl_to_ll A)) (oc(cpl_to_ll B))
   | Impl A B => parr (wn (dual (cpl_to_ll A))) (cpl_to_ll B)
-  | Neg A => wn (dual (cpl_to_ll A))
+  | Neg A => parr (wn (dual (cpl_to_ll A))) zero
   | Bot => zero
-  | Conj A B => wn( dual ( parr (wn (dual(cpl_to_ll A))) (wn (dual(cpl_to_ll B)))))
+  | Conj A B => awith(cpl_to_ll A) (cpl_to_ll B)
 end.
 
-(*axioma valido???*)
-Axiom parr_oplus_eq a b: forall a b:formula, (parr a b) = (wn(aplus (oc a) (oc b))).
 
 Fixpoint dual_set_cpl_to_ll (a: list PropF) : list formula :=
 match a with
@@ -109,6 +90,36 @@ Proof.
 intros. induction Δ.
   - simpl. rewrite app_nil_r. apply H.
   - simpl. apply (wk_r_ext A ). apply IHΔ.
+Qed.
+
+(* Gambiarra!  Deveria fazer para um conjunto A de formulas em vez de para uma unica*)
+Lemma remove_and_intros': forall Δ Γ A, ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Δ)) -> ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ)++(dual_set_cpl_to_ll Δ)).
+Proof.
+intros. induction Γ.
+  - simpl. apply H.
+  - simpl. apply (wk_r_ext [(cpl_to_ll A)]). apply IHΓ.
+Qed.
+
+Lemma remove_and_intros'': forall Δ Γ A, ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ)) -> ll ((cpl_to_ll A)::(dual_set_cpl_to_ll Γ)++(dual_set_cpl_to_ll Δ)).
+Proof.
+intros. induction Δ.
+  - simpl. rewrite app_nil_r. apply H.
+  - simpl. apply (wk_r_ext ((cpl_to_ll A ):: dual_set_cpl_to_ll Γ)). apply IHΔ.
+Qed.
+
+(* Gambiarra!  Deveria fazer para um conjunto A de formulas em vez de para duas*)
+Lemma remove_or_elim': forall Δ Γ A C, ll ((?(cpl_to_ll A)^)::(cpl_to_ll C)::(dual_set_cpl_to_ll Δ)) -> ll ((?(cpl_to_ll A)^)::(cpl_to_ll C)::(dual_set_cpl_to_ll Γ)++(dual_set_cpl_to_ll Δ)).
+Proof.
+intros. induction Γ.
+  - simpl. apply H.
+  - simpl. apply (wk_r_ext [(?(cpl_to_ll A)^); (cpl_to_ll C)]). apply IHΓ.
+Qed.
+
+Lemma remove_or_elim'': forall Δ Γ A C, ll ((?(cpl_to_ll A)^)::(cpl_to_ll C)::(dual_set_cpl_to_ll Γ)) -> ll ((?(cpl_to_ll A)^)::(cpl_to_ll C)::(dual_set_cpl_to_ll Γ)++(dual_set_cpl_to_ll Δ)).
+Proof.
+intros. induction Δ.
+  - simpl. rewrite app_nil_r. apply H.
+  - simpl. apply (wk_r_ext ((?(cpl_to_ll A)^)::(cpl_to_ll C)::dual_set_cpl_to_ll Γ)). apply IHΔ.
 Qed.
 
 Lemma remove_oc_set: forall A Δ, ll ((cpl_to_ll A) :: (dual_set_cpl_to_ll Δ)) -> ll ((!(cpl_to_ll A)) :: (dual_set_cpl_to_ll Δ)).
@@ -165,35 +176,46 @@ intros. dependent induction H.
         { rewrite app_nil_r. reflexivity. }
      + reflexivity.
 
-(*Começo da prova de eliminação da negação*)
-  - apply (cut_r_ext [] (dual(zero))).
-    + cbn_sequent. apply (top_r_ext []).
-    + simpl. simpl in IHNc. rewrite <-(bidual (cpl_to_ll A)).
-  admit. (*dual elim*)
-
 (* Prova da introdução do E*)
-  - simpl. rewrite split_tr_set.
-    replace ((?(!(cpl_to_ll A^)^ ⊗ !(cpl_to_ll B^)^))::(dual_set_cpl_to_ll Δ) ++ (dual_set_cpl_to_ll Γ))
-      with ([]++(?(!(cpl_to_ll A^)^ ⊗ !(cpl_to_ll B^)^))::(dual_set_cpl_to_ll Δ) ++ (dual_set_cpl_to_ll Γ)).
-    + apply ex_transp_middle2. simpl. apply (de_r_ext (dual_set_cpl_to_ll Δ)). apply (tens_r_ext (dual_set_cpl_to_ll Δ)).
-      * cbn_sequent. admit.
-      * cbn_sequent. admit.
-    + reflexivity.
+  - simpl. rewrite split_tr_set. apply (with_r_ext []).
+    + simpl. apply remove_and_intros'. apply IHNc1.
+    + simpl. apply remove_and_intros''. apply IHNc2.
 
 (* Prova 1 da eliminação do E*)
-  - admit.
+  - simpl in IHNc. apply (cut_r_ext [cpl_to_ll A] (dual (awith (cpl_to_ll A) (cpl_to_ll B))) (dual_set_cpl_to_ll Γ)).
+    + simpl. apply (plus_r1_ext [cpl_to_ll A]). cbn_sequent. ax_expansion.
+    + rewrite bidual. apply IHNc.
 
 (* Prova 2 da eliminação do E*)
-  - admit.
+  - simpl in IHNc. apply (cut_r_ext [cpl_to_ll B] (dual (awith (cpl_to_ll A) (cpl_to_ll B))) (dual_set_cpl_to_ll Γ)).
+    + simpl. apply (plus_r2_ext [cpl_to_ll B]). cbn_sequent. ax_expansion.
+    + rewrite bidual. apply IHNc.
 
 (* Prova 1 da introdução do OU*)
-  - simpl. rewrite parr_oplus_eq. apply (de_r_ext []). cbn_sequent. apply (plus_r1_ext []).
-    cbn_sequent. admit.
+  - simpl. apply (plus_r1_ext []). cbn_sequent. admit.
 
 (* Prova 2 da introdução do OU*)
-  - simpl. rewrite parr_oplus_eq. apply (de_r_ext []). cbn_sequent. apply (plus_r2_ext []).
-    cbn_sequent. admit.
+  - simpl. apply (plus_r2_ext []). cbn_sequent. admit.
 
 (* Prova da eliminação do OU*)
-  - admit.
+  - rewrite split_tr_set.
+    replace (cpl_to_ll C :: dual_set_cpl_to_ll Γ ++ dual_set_cpl_to_ll (Δ ++ Δ'))
+    with ([]++cpl_to_ll C :: dual_set_cpl_to_ll Γ ++ dual_set_cpl_to_ll (Δ ++ Δ')).
+    + apply ex_transp_middle2. simpl. simpl in IHNc1. 
+      apply (cut_r_ext (dual_set_cpl_to_ll Γ) (aplus (oc (cpl_to_ll A)) (oc (cpl_to_ll B))) ((cpl_to_ll C) :: dual_set_cpl_to_ll (Δ ++ Δ'))).
+      * replace (dual_set_cpl_to_ll Γ ++ [!cpl_to_ll A ⊕ !cpl_to_ll B])
+        with ([]++dual_set_cpl_to_ll Γ ++ (!cpl_to_ll A ⊕ !cpl_to_ll B)::[]).
+        { apply ex_transp_middle1. simpl. rewrite app_nil_r. apply IHNc1. }
+        { reflexivity. }
+      * simpl. apply (with_r_ext []).
+        { simpl. rewrite split_tr_set. apply remove_or_elim''. simpl in IHNc2.
+          replace ((?(cpl_to_ll A)^ :: cpl_to_ll C :: dual_set_cpl_to_ll Δ))
+          with ([]++[(?(cpl_to_ll A)^)] ++ cpl_to_ll C :: dual_set_cpl_to_ll Δ).
+          { apply ex_transp_middle1. simpl. apply IHNc2. } reflexivity. }
+        { simpl. rewrite split_tr_set. apply remove_or_elim'. simpl in IHNc3.
+          replace ((?(cpl_to_ll B)^ :: cpl_to_ll C :: dual_set_cpl_to_ll Δ'))
+          with ([]++[(?(cpl_to_ll B)^)] ++ cpl_to_ll C :: dual_set_cpl_to_ll Δ').
+          { apply ex_transp_middle1. simpl. apply IHNc3. } reflexivity. }
+    + reflexivity.
 Admitted.
+
