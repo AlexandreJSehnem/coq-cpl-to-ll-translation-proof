@@ -7,7 +7,7 @@ Set Implicit Arguments.
 
 (** * Definitions 
 
-definition of Propositional Formulas*)
+definition of Intuitionistic Formulas*)
 Inductive PropF : Set :=
  | Var : Atom -> PropF
  | Bot : PropF
@@ -235,6 +235,74 @@ intros. dependent induction H.
     + reflexivity.
 Qed.
 
+(* Prooving the other side of the translation*)
+Theorem proof_cbv': forall Γ A, (ll ((cbv A)::(dual_set_cbv Γ))) -> Γ \- A.
+Proof.
+intros. induction A.
+  - .
+Admitted.
+
+
+(* Começo tradução call-by-name *)
+
+Fixpoint cbn (a: PropF) : formula :=
+match a with
+  | Var A => oc (var A)
+  | Disj A B => aplus (cbn A) (cbn B)
+  | Impl A B => oc (parr (dual (cbn A)) (cbn B))
+  | Neg A => parr (wn (dual (cbn A))) zero
+  | Bot => zero
+  | Conj A B => tens (cbn A) (cbn B)
+end.
+
+
+Fixpoint dual_set_cbn (a: list PropF) : list formula :=
+match a with
+  | [] => []
+  | A::t => (wn (dual (cbn A)))::(dual_set_cbn t)
+end.
+
+Lemma remove_cbn_set: forall Δ A, ll (A) -> ll (A++(dual_set_cbn Δ)).
+Proof.
+intros. induction Δ.
+  - simpl. rewrite app_nil_r. apply H.
+  - simpl. apply (wk_r_ext A ). apply IHΔ.
+Qed.
+
+(*Lemma to remove dual_set_cbv when there is an axiom*)
+Lemma remove_wn_set_cbn: forall Γ A, ll ((cbn A)::[dual (cbn A)]) -> ll ((cbn A)::(dual_set_cbn (A::Γ))).
+Proof.
+intros. induction Γ. 
+  - simpl. apply (de_r_ext [cbn A]). cbn_sequent. ax_expansion.
+  - simpl. simpl in IHΓ. apply (wk_r_ext ((cbn A)::[(wn(dual (cbn A)))])); cbn_sequent. apply IHΓ.
+Qed.
+
+Lemma split_cbn_set: forall Δ Γ, dual_set_cbn (Δ ++ Γ) = (dual_set_cbn (Δ)++dual_set_cbn (Γ)).
+Proof.
+intros. induction Δ.
+- simpl. reflexivity.
+- simpl. rewrite IHΔ. reflexivity.
+Qed.
+
+Theorem proof_cbn: forall Γ A, Γ \- A -> (ll ((cbn A)::(dual_set_cbn Γ))).
+Proof.
+intros. induction H.
+(* Axiom *)
+  - induction Γ.
+    + inversion H.
+    + simpl. simpl in H. destruct H.
+      * rewrite H. apply remove_wn_set_cbn. ax_expansion.
+      * apply (wk_r_ext [(cbn A)]). apply IHΓ. apply H.
+(* Introdução da implicação *)
+  - simpl. simpl in IHNi. admit.
+(* Eliminação da implicação *)
+  - simpl in IHNi1. rewrite split_cbn_set.
+    replace ((cbn B) :: dual_set_cbn Γ ++ dual_set_cbn Δ)
+    with (cbn B :: dual_set_cbn Γ ++ dual_set_cbn Δ)
+    apply (cut_r_ext ((cbn B) :: dual_set_cbn Γ) (!(cbv A^ ⅋ cbv B)) (dual_set_cbn Δ)).
+    + admit.
+    + simpl. admit.
+Admitted.
 
 
 
