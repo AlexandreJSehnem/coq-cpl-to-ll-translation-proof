@@ -239,7 +239,6 @@ Qed.
 Theorem proof_cbv': forall Γ A, (ll ((cbv A)::(dual_set_cbv Γ))) -> Γ \- A.
 Proof.
 intros. induction A.
-  - .
 Admitted.
 
 
@@ -250,7 +249,7 @@ match a with
   | Var A => oc (var A)
   | Disj A B => aplus (cbn A) (cbn B)
   | Impl A B => oc (parr (dual (cbn A)) (cbn B))
-  | Neg A => parr (wn (dual (cbn A))) zero
+  | Neg A => oc (parr (dual (cbn A)) zero)
   | Bot => zero
   | Conj A B => tens (cbn A) (cbn B)
 end.
