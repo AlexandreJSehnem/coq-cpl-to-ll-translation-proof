@@ -55,7 +55,7 @@ Definition Provable A := [] \- A.
 Fixpoint cbv (a: PropF) : formula :=
 match a with
   | Var A => (wn (var A))
-  | Disj A B => wn (parr (cbv A) (cbv B))
+  | Disj A B => wn (aplus (oc(cbv A)) (oc(cbv B)))
   | Impl A B => wn (parr (wn (dual (cbv A))) (cbv B))
   | Neg A => wn (wn (dual (cbv A)))
   | Bot => wn bot
@@ -91,6 +91,14 @@ intros. induction Δ.
   - simpl. rewrite app_nil_r. apply H.
   - simpl. apply (wk_r_ext A ). apply IHΔ.
 Qed.
+
+Lemma remove_tr_set': forall Δ A B, ll ((A)::[B]) -> ll ((A)::(B)::(dual_set_cbv Δ)).
+Proof.
+intros. induction Δ.
+  - simpl. apply H.
+  - simpl. apply (wk_r_ext [A; B]). apply IHΔ.
+Qed.
+
 
 (* Gambiarra!  Deveria fazer para um conjunto A de formulas em vez de para uma unica*)
 Lemma remove_and_intros': forall Δ Γ A, ll ((cbv A)::(dual_set_cbv Δ)) -> ll ((cbv A)::(dual_set_cbv Γ)++(dual_set_cbv Δ)).
@@ -160,8 +168,8 @@ intros. induction A.
     + apply (oc_r_ext [] (B)). simpl. simpl in H. rewrite <- map_equals_set. apply H.
     + reflexivity.
   - simpl. rewrite map_equals_set.
-    replace ((!B) :: (?(cbv A1 ⅋ cbv A2)) :: nanoll.map wn (oc_set_cbv Γ))
-    with ((!B) :: nanoll.map wn ((cbv A1 ⅋ cbv A2) ::(oc_set_cbv Γ))).
+    replace ((!B) :: (?(!cbv A1 ⊕ !cbv A2)) :: nanoll.map wn (oc_set_cbv Γ))
+    with ((!B) :: nanoll.map wn ((!cbv A1 ⊕ !cbv A2) ::(oc_set_cbv Γ))).
     + apply (oc_r_ext [] (B)). simpl. simpl in H. rewrite <- map_equals_set. apply H.
     + reflexivity.
   - simpl. rewrite map_equals_set.
@@ -175,10 +183,6 @@ intros. induction A.
     + apply (oc_r_ext [] (B)). simpl. simpl in H. rewrite <- map_equals_set. apply H.
     + reflexivity.
 Qed.
-
-Lemma remove_oc_f': forall  Γ A B, ll ((B)::(dual (cbv A))::(dual_set_cbv (Γ))) -> ll ((!B)::(dual (cbv A))::(dual_set_cbv (Γ))).
-Proof.
-Admitted.
 
 Lemma duplicate_cbv_cl: forall A B Γ, ll (B::(cbv A)::(cbv A)::(dual_set_cbv Γ)) -> ll (B::(cbv A)::(dual_set_cbv Γ)).
 Proof.
@@ -239,11 +243,11 @@ intros. dependent induction H.
      + reflexivity.
 
 (* Prova da regra do terceiro excluido*)
-  - simpl. apply (de_r_ext []). apply (parr_r_ext []). apply (de_r_ext [cbv A]).
-    replace ([cbv A] ++ (? (cbv A^)) :: dual_set_cbv Γ) with ([cbv A] ++ (dual_set_cbv (A::Γ))).
-    + apply remove_wn_dual_set. ax_expansion.
-    + simpl. reflexivity.
-
+  - simpl. apply (co_r_ext []). simpl. apply (de_r_ext []). simpl. apply remove_tr_set'.
+    apply (plus_r2_ext []). simpl. apply (oc_r_ext [] (??(cbv A)^) [(!cbv A ⊕ !??(cbv A)^)]).
+    simpl. apply (de_r_ext [??(cbv A)^]). apply (plus_r1_ext [??(cbv A)^]).
+    apply (oc_r_ext [?(cbv A)^] (cbv A) []). simpl. apply (de_r_ext []). apply (de_r_ext []).
+    ax_expansion.
 (* Prova da introdução da dupla negação*)
   - simpl. simpl in IHNc. apply (cut_r_ext [cbv A] (dual ((parr (?⟂) (?(!(!(cbv A^)^))))))).
     + simpl. rewrite bidual. replace [cbv A; !1 ⊗ !??(cbv A)^] with ([]++(cbv A)::[!1 ⊗ !??(cbv A)^]++[]).
@@ -272,59 +276,33 @@ intros. dependent induction H.
     + rewrite bidual. apply IHNc.
 
 (* Prova 1 da introdução do OU*)
-  - simpl. apply (de_r_ext []). apply parr_r_ext.
-    replace ([] ++ cbv A :: cbv B :: dual_set_cbv Γ)
-    with ([] ++ [cbv A] ++ cbv B :: dual_set_cbv Γ).
-    + apply ex_transp_middle1. apply (cut_r_ext [cbv B] (!(dual (cbv B)))).
-      * replace ([cbv B] ++ [!(cbv B)^])
-        with ([]++[cbv B] ++ (!(cbv B)^)::[]).
-        { apply ex_transp_middle1. simpl. apply (remove_oc_f []). simpl. ax_expansion. }
-        { reflexivity. }
-      * simpl. apply (wk_r_ext []). apply IHNc.
-    + reflexivity.
+  - simpl. apply (de_r_ext []). apply (plus_r1_ext []). rewrite map_equals_set.
+    apply (oc_r_ext []). rewrite <- map_equals_set. simpl. apply IHNc.
 
 (* Prova 2 da introdução do OU*)
-  - simpl. apply (de_r_ext []). apply parr_r_ext. apply (cut_r_ext [cbv A] (!(dual (cbv A)))).
-    + replace ([cbv A] ++ [!(cbv A)^])
-        with ([]++[cbv A] ++ (!(cbv A)^)::[]).
-      * apply ex_transp_middle1. simpl. apply (remove_oc_f []). simpl. ax_expansion.
-      * reflexivity.
-    + simpl. apply (wk_r_ext []). apply IHNc.
+  - simpl. apply (de_r_ext []). apply (plus_r2_ext []). rewrite map_equals_set.
+    apply (oc_r_ext []). rewrite <- map_equals_set. simpl. apply IHNc.
 
 (* Prova da eliminação do OU*)
   - rewrite split_tr_set.
     replace (cbv C :: dual_set_cbv Γ ++ dual_set_cbv (Δ ++ Δ'))
     with ([]++cbv C :: dual_set_cbv Γ ++ dual_set_cbv (Δ ++ Δ')).
     + apply ex_transp_middle2. simpl. simpl in IHNc1. 
-      apply (cut_r_ext (dual_set_cbv Γ) (?(cbv A ⅋ cbv B)) ((cbv C) :: dual_set_cbv (Δ ++ Δ'))).
-      * replace (dual_set_cbv Γ ++ [?(cbv A ⅋ cbv B)])
-        with ([]++dual_set_cbv Γ ++ (?(cbv A ⅋ cbv B))::[]).
+      apply (cut_r_ext (dual_set_cbv Γ) (?(!cbv A ⊕ !cbv B)) ((cbv C) :: dual_set_cbv (Δ ++ Δ'))).
+      * replace (dual_set_cbv Γ ++ [?(!cbv A ⊕ !cbv B)])
+        with ([]++dual_set_cbv Γ ++ (?(!cbv A ⊕ !cbv B))::[]).
         { apply ex_transp_middle1. simpl. rewrite app_nil_r. apply IHNc1. }
         { reflexivity. }
-      * simpl. apply remove_oc_f. apply duplicate_cbv_cl. rewrite split_tr_set.
-        replace (cbv A^ ⊗ cbv B^ :: cbv C :: cbv C :: dual_set_cbv Δ ++ dual_set_cbv Δ')
-        with (([cbv A^ ⊗ cbv B^]++[cbv C]) ++ cbv C :: dual_set_cbv Δ ++ dual_set_cbv Δ').
-        { apply ex_transp_middle2.
-          replace (([cbv A^ ⊗ cbv B^] ++ [cbv C]) ++ dual_set_cbv Δ ++ cbv C :: dual_set_cbv Δ')
-          with (([]++[cbv A^ ⊗ cbv B^] ++ (cbv C) :: (dual_set_cbv Δ ++ [cbv C] ++ dual_set_cbv Δ'))).
-          { apply ex_transp_middle1. simpl.
-            replace (cbv C :: cbv A^ ⊗ cbv B^ :: dual_set_cbv Δ ++ cbv C :: dual_set_cbv Δ')
-            with ([cbv C] ++ (cbv A^ ⊗ cbv B^) :: dual_set_cbv Δ ++ ([cbv C] ++ dual_set_cbv Δ')).
-            { apply ex_transp_middle2. apply (tens_r_ext ([cbv C] ++ dual_set_cbv Δ)).
-              { simpl in IHNc2. apply (cut_r_ext ([cbv C] ++ dual_set_cbv Δ) ((?(cbv A^)))).
-                { simpl. replace (cbv C :: dual_set_cbv Δ ++ [?(cbv A)^]) with ([cbv C] ++ dual_set_cbv Δ ++ (?(cbv A)^)::[]).
-                  apply ex_transp_middle1. rewrite app_nil_r. apply IHNc2. reflexivity. }
-              { simpl. rewrite bidual. admit. } }
-            { admit. } }
+      * simpl. apply remove_oc_f. apply (with_r_ext []).
+        { simpl. simpl in IHNc2. rewrite split_tr_set. apply remove_or_elim''.
+          replace (?(cbv A)^ :: cbv C :: dual_set_cbv Δ)
+          with ([]++[?(cbv A)^] ++ cbv C :: dual_set_cbv Δ).
+          { apply (ex_transp_middle1 []). apply IHNc2. }
+          { reflexivity. } } }
+        { simpl. simpl in IHNc3. rewrite split_tr_set. apply remove_or_elim'.
+          replace (?(cbv B)^ :: cbv C :: dual_set_cbv Δ')
+          with ([]++[?(cbv B)^] ++ cbv C :: dual_set_cbv Δ').
+          { apply (ex_transp_middle1 []). apply IHNc3. }
           { reflexivity. } }
-        { reflexivity. } } reflexivity.
     + reflexivity.
-Admitted.
-
-(* Prooving the other side of the translation*)
-Theorem proof_cbv': forall A Γ, (ll ((cbv A)::(dual_set_cbv Γ))) -> Γ \- A.
-Proof.
-intros. induction A.
-  - induction Γ.
-    + simpl in H. 
-Admitted.
+Qed.
